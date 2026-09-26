@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chalk — on-device doodle recogniser for Android</title>
+<meta name="description" content="Chalk reads the pen strokes of a drawing and guesses what it is, out of 345 everyday things, even before the drawing is finished. On-device, 1.7 MB, no dependencies, no network.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect x=%221%22 y=%221%22 width=%2222%22 height=%2222%22 rx=%227%22 fill=%22%23d6336c%22/><path d=%22M5 15c2-4 4-4 5 0s3 4 5 0 3-4 4-1%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222%22 stroke-linecap=%22round%22/></svg>">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #f5f5f7;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #d6336c;
+    --accent-hover: #c2255c;
+    --code-bg: #f5f5f7;
+    --code-text: #1d1d1f;
+    --card-bg: #ffffff;
+    --nav-bg: rgba(255, 255, 255, 0.8);
+    --pill-bg: #f5f5f7;
+    --syn-comment: #6e7781;
+    --syn-keyword: #cf222e;
+    --syn-string: #0a3069;
+    --syn-number: #0550ae;
+    --syn-function: #8250df;
+    --syn-type: #953800;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000;
+      --bg-subtle: #1d1d1f;
+      --text: #f5f5f7;
+      --text-secondary: #a1a1a6;
+      --border: #424245;
+      --accent: #f06595;
+      --accent-hover: #f783ac;
+      --code-bg: #1d1d1f;
+      --code-text: #f5f5f7;
+      --card-bg: #1d1d1f;
+      --nav-bg: rgba(0, 0, 0, 0.8);
+      --pill-bg: #2c2c2e;
+      --syn-comment: #8b949e;
+      --syn-keyword: #ff7b72;
+      --syn-string: #a5d6ff;
+      --syn-number: #79c0ff;
+      --syn-function: #d2a8ff;
+      --syn-type: #ffa657;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --bg-subtle: #1d1d1f;
+    --text: #f5f5f7;
+    --text-secondary: #a1a1a6;
+    --border: #424245;
+    --accent: #f06595;
+    --accent-hover: #f783ac;
+    --code-bg: #1d1d1f;
+    --code-text: #f5f5f7;
+    --card-bg: #1d1d1f;
+    --nav-bg: rgba(0, 0, 0, 0.8);
+    --pill-bg: #2c2c2e;
+    --syn-comment: #8b949e;
+    --syn-keyword: #ff7b72;
+    --syn-string: #a5d6ff;
+    --syn-number: #79c0ff;
+    --syn-function: #d2a8ff;
+    --syn-type: #ffa657;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-hover); }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--nav-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 980px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; height: 48px;
+    font-size: 14px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text); }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--text); font-size: 12px; opacity: 0.85; }
+  .nav-links a:hover { opacity: 1; }
+  .nav-cta {
+    font-size: 12px; padding: 6px 14px; border-radius: 980px;
+    background: var(--accent); color: #fff !important; opacity: 1 !important;
+  }
+  .nav-cta:hover { background: var(--accent-hover); }
+
+  /* Hero */
+  .hero {
+    max-width: 980px; margin: 0 auto;
+    padding: 90px 22px 60px;
+    text-align: center;
+  }
+  .hero .eyebrow {
+    font-size: 17px; font-weight: 600; color: var(--accent); margin-bottom: 8px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 64px);
+    font-weight: 700; letter-spacing: -0.015em;
+    margin: 0 0 12px; line-height: 1.05;
+  }
+  .hero p.tagline {
+    font-size: clamp(19px, 3vw, 24px);
+    color: var(--text-secondary);
+    max-width: 640px; margin: 0 auto 32px;
+    font-weight: 400;
+  }
+  .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .hero-trust { font-size: 13px; color: var(--text-secondary); text-align: center; margin: 0 0 48px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; border-radius: 980px; font-size: 15px; font-weight: 400;
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff !important; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--accent) !important; border-color: var(--accent); }
+  .btn-secondary:hover { background: var(--accent); color: #fff !important; }
+
+  .hero-demo {
+    background: var(--bg-subtle);
+    border-radius: 18px;
+    padding: 28px;
+    text-align: left;
+    max-width: 640px; margin: 0 auto;
+    border: 1px solid var(--border);
+    transition: opacity 0.35s ease;
+  }
+  .hero-demo.is-fading { opacity: 0; }
+  .hero-demo .prompt { color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; }
+  .hero-demo .input-row {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; margin-bottom: 14px;
+  }
+  .emoji-row { display: flex; gap: 10px; flex-wrap: wrap; font-size: 28px; }
+  .emoji-row span { transition: transform 0.15s; }
+
+  /* Sections */
+  section { max-width: 980px; margin: 0 auto; padding: 70px 22px; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+  .section-head { text-align: center; margin-bottom: 44px; }
+  .section-head .kicker {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .section-head h2 { font-size: clamp(30px, 4vw, 40px); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 10px; }
+  .section-head p { color: var(--text-secondary); font-size: 18px; max-width: 620px; margin: 0 auto; }
+
+  /* Feature grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--bg-subtle); border-radius: 18px; padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .card .icon { width: 30px; height: 30px; margin-bottom: 14px; color: var(--accent); display: block; }
+  .card .icon svg { display: block; width: 100%; height: 100%; }
+  .card h3 { font-size: 19px; font-weight: 600; margin: 0 0 8px; }
+  .card p { font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 14px; padding: 20px 22px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.6; border: 1px solid var(--border);
+    margin: 0;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+  .hljs-comment, .hljs-quote { color: var(--syn-comment); font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--syn-keyword); }
+  .hljs-string, .hljs-doctag, .hljs-regexp { color: var(--syn-string); }
+  .hljs-number { color: var(--syn-number); }
+  .hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--syn-function); }
+  .hljs-built_in, .hljs-type, .hljs-class { color: var(--syn-type); }
+  .hljs-variable, .hljs-attr, .hljs-params, .hljs-property { color: var(--code-text); }
+  .hljs-meta { color: var(--syn-comment); }
+  .code-label {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .code-block { margin-bottom: 22px; }
+  .tag-pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px;
+    border-radius: 980px; background: var(--pill-bg); color: var(--text-secondary);
+    margin-left: 8px; vertical-align: 2px;
+  }
+  .tag-pill.live { background: #d1f7dd; color: #0a6b2c; }
+
+  .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 600px) { table { display: block; overflow-x: auto; } }
+
+  /* Use cases */
+  .usecase-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .usecase {
+    display: flex; gap: 16px; padding: 22px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .usecase .icon { width: 26px; height: 26px; flex: none; color: var(--accent); }
+  .usecase .icon svg { display: block; width: 100%; height: 100%; }
+  .usecase h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .usecase p { margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* API table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td code { background: var(--code-bg); padding: 2px 6px; border-radius: 5px; font-size: 12.5px; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 20px; text-align: center;
+  }
+  .stat-card .stat-value { font-size: clamp(28px, 4vw, 36px); font-weight: 700; letter-spacing: -0.01em; color: var(--accent); }
+  .stat-card .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-top: 6px; }
+  .stat-card .stat-note { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; }
+
+  /* Use-case example line */
+  .usecase .example {
+    display: block; margin-top: 10px; font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--text-secondary); background: var(--code-bg); border-radius: 8px;
+    padding: 7px 10px;
+  }
+
+  /* Copy button on code blocks */
+  .code-block { position: relative; }
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-secondary); font-size: 11px; font-weight: 600;
+    padding: 5px 9px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--text-secondary); }
+  .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+  /* Prompt block for AI coding agents */
+  .prompt-block {
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; margin-top: 16px;
+  }
+  .prompt-block .code-label { margin-bottom: 10px; }
+  .prompt-block pre { background: var(--card-bg); }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .faq-item:first-child { padding-top: 0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item h4 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .faq-item p { font-size: 14.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+  /* Pricing */
+  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+  @media (max-width: 860px) { .price-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; } }
+  .nowrap { white-space: nowrap; }
+  .price-card {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px;
+  }
+  .price-card.featured { border: 2px solid var(--accent); }
+  .price-badge {
+    position: absolute; top: -12px; left: 24px;
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 10px; border-radius: 980px;
+  }
+  .price-card .plan { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+  .price-card .price { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; margin: 8px 0 4px; }
+  .price-card .price-sub { font-size: 14px; color: var(--text-secondary); margin: 0 0 18px; min-height: 42px; }
+  .price-card ul { list-style: none; padding: 0; margin: 0 0 22px; flex: 1; }
+  .price-card li { position: relative; padding-left: 24px; font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+  .price-card li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+  .price-card .btn { text-align: center; }
+  .price-contact { display: flex; gap: 8px; flex-wrap: wrap; }
+  .price-contact .btn { flex: 1; padding-left: 12px; padding-right: 12px; font-size: 14px; }
+  .price-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+  @media (max-width: 720px) { .price-rules { grid-template-columns: 1fr; } }
+  .price-rules > div { background: var(--bg-subtle); border-radius: 18px; padding: 24px; }
+  .price-rules h3 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+  .price-rules p, .price-rules li { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+  .price-rules p { margin: 0 0 10px; }
+  .price-rules ul { margin: 0; padding-left: 18px; }
+  .price-rules li { margin-bottom: 6px; }
+  .price-foot { text-align: center; font-size: 14px; color: var(--text-secondary); margin: 26px 0 0; }
+
+
+  /* Footer */
+  footer {
+    max-width: 980px; margin: 0 auto; padding: 50px 22px 80px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  footer .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  footer .foot-links a { font-size: 13px; color: var(--text-secondary); }
+  footer .copyright { font-size: 12px; color: var(--text-secondary); }
+
+  .bubble { display:inline-block; background: var(--card-bg); border:1px solid var(--border); border-radius:18px 18px 18px 6px;
+    padding:10px 16px; font-size:16px; margin-bottom:16px; }
+  .chip-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .chip-row span { border:1px solid var(--accent); color: var(--accent); border-radius:980px; padding:7px 16px; font-size:14.5px; background: var(--card-bg); }
+
+  .shot { padding:0; overflow:hidden; }
+  .shot img { width:100%; display:block; border-bottom:1px solid var(--border); }
+  .shot-caption { padding:20px; }
+  .table-note { font-size:14px; color:var(--text-secondary); margin-top:18px; line-height:1.6; }
+  .table-wrap { overflow-x:auto; }
+  @media (max-width: 720px) { .nav-links { display:none; } .hero { padding-top:60px; } }
+  .verdict { border-radius:980px; padding:7px 16px; font-size:14.5px; font-weight:500; border:1px solid var(--border); background: var(--card-bg); }
+  .verdict.ok { color:#1b873f; border-color:#1b873f; }
+  .verdict.bad { color:#d1242f; border-color:#d1242f; }
+  .verdict.score { color: var(--text-secondary); }
+  .chip-row .restored { font-size: 17px; font-weight: 500; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="var(--accent)"/><path d="M5 15c2-4 4-4 5 0s3 4 5 0 3-4 4-1" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      Chalk
+    </div>
+    <div class="nav-links">
+      <a href="#screenshots">Screenshots</a>
+      <a href="#install">Install</a>
+      <a href="#usage">Usage</a>
+      <a href="#quality">Quality</a>
+      <a href="#api">API</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="nav-cta" href="https://github.com/rajumark/chalk">GitHub ↗</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="eyebrow">Chalk · by Hoverfly</div>
+  <h1>Draw it.<br>Chalk knows what it is.</h1>
+  <p class="tagline">Read the pen strokes of a doodle and guess what it is, out of 345 everyday things, even before the drawing is finished. On the phone itself, in a 1.7 MB AAR.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#install">Get started</a>
+    <a class="btn btn-secondary" href="https://github.com/rajumark/chalk">View source</a>
+  </div>
+  <p class="hero-trust">Free up to 10k monthly active devices · No API key · Live on JitPack</p>
+  <div class="hero-demo" id="heroDemo">
+    <div class="prompt" id="demoPrompt"></div>
+    <div class="bubble" id="demoInput"></div>
+    <div class="chip-row" id="demoChips"></div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="section-head">
+    <div class="kicker">Why Chalk</div>
+    <h2>A sketch recogniser that fits anywhere</h2>
+    <p>No server, no API key, no per-request bill. A small Kotlin library that you can read, test and ship.</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17c3-6 6-6 8 0s5 6 8 0"/></svg></span>
+      <h3>Reads strokes</h3>
+      <p>Pass the points the finger drew, straight from your canvas. Size and position on screen don't matter; the drawing is simplified on the device the same way the training data was.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <h3>Guesses while you draw</h3>
+      <p>Trained on half-finished drawings too, so it can guess after the first strokes, like the Quick, Draw! game. It beats a 200× larger model there.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5v-7Z"/><path d="M3 8.5 12 14l9-5.5"/><path d="M12 14v7"/></svg></span>
+      <h3>No dependencies</h3>
+      <p>Pure Kotlin inference. There is no ONNX Runtime, TFLite, ML Kit or native code, and it works from minSdk 21 in Kotlin or Java.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h3>Private &amp; offline</h3>
+      <p>The model ships inside the AAR. It makes no network calls, needs no permissions and sends no telemetry.</p>
+    </div>
+  </div>
+  <div class="stat-grid" style="margin-top: 40px;">
+    <div class="stat-card"><div class="stat-value">81%</div><div class="stat-label">First guess right</div><div class="stat-note">94% in the top 3</div></div>
+    <div class="stat-card"><div class="stat-value">1.7MB</div><div class="stat-label">On-device</div><div class="stat-note">int8 weights</div></div>
+    <div class="stat-card"><div class="stat-value">345</div><div class="stat-label">Things</div><div class="stat-note">animals, food, objects, places</div></div>
+    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Dependencies</div><div class="stat-note">no native code</div></div>
+  </div>
+</section>
+
+<section id="screenshots">
+  <div class="section-head">
+    <div class="kicker">On device</div>
+    <h2>Draw with a finger, see the guess</h2>
+    <p>Real output from the sample app on an Android emulator, drawn with touch events. These are not mockups.</p>
+  </div>
+  <div class="grid">
+    <div class="card shot"><img src="screenshots/chalk-house.png" alt="Chalk recognises a house" loading="lazy"><div class="shot-caption"><h3>House</h3><p>house 89% · barn 6%</p></div></div>
+    <div class="card shot"><img src="screenshots/chalk-sun.png" alt="Chalk recognises a sun" loading="lazy"><div class="shot-caption"><h3>Sun</h3><p>sun 93%</p></div></div>
+    <div class="card shot"><img src="screenshots/chalk-fish.png" alt="Chalk recognises a fish" loading="lazy"><div class="shot-caption"><h3>Fish</h3><p>fish 97%</p></div></div>
+    <div class="card shot"><img src="screenshots/chalk-partial.png" alt="Chalk recognises a half-drawn house" loading="lazy"><div class="shot-caption"><h3>Half-drawn</h3><p>walls and roof only: house 86%</p></div></div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="section-head">
+    <div class="kicker">Install</div>
+    <h2>Add it to your build</h2>
+    <p>One line in your Gradle file, available via JitPack. No API key, no account.</p>
+  </div>
+  <div class="code-block">
+    <div class="code-label">JitPack <span class="tag-pill live">live</span></div>
+    <button class="copy-btn" type="button">Copy</button>
+    <pre><code class="language-kotlin">// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+// build.gradle.kts
+dependencies {
+    implementation("com.github.rajumark:chalk:v1.0.0")
+}</code></pre>
+  </div>
+  <div class="prompt-block">
+    <div class="code-label">Build with a prompt</div>
+    <div class="code-block">
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code>Add Chalk from rajumark to this Android project (Kotlin).
+
+What it does: on-device doodle recognition. Given the pen strokes of a drawing (screen pixels), it returns the most likely of 345 everyday things (the Quick, Draw! categories), even for half-finished drawings. 1.7 MB, no dependencies, no network.
+
+Install (JitPack):
+  settings.gradle.kts: add maven { url = uri("https://jitpack.io") } to repositories
+  build.gradle.kts: implementation("com.github.rajumark:chalk:v1.0.0")
+
+Usage:
+  val chalk = Chalk(context)                         // off the main thread, keep one instance
+  val strokes = listOf(Stroke(xs, ys), ...)          // one Stroke per finger-down ... finger-up
+  val guesses = chalk.guess(strokes)                 // [Guess(label=house, score=0.89), ...]
+
+Repo: https://github.com/rajumark/chalk#readme
+Add the dependency, then follow the README for the exact API and current version.</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="section-head">
+    <div class="kicker">Usage</div>
+    <h2>One call per stroke</h2>
+    <p>Load once and reuse the instance. <code>guess()</code> is thread-safe; call it after every stroke to guess live.</p>
+  </div>
+  <div class="two-col">
+    <div class="code-block">
+      <div class="code-label">Kotlin</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-kotlin">val chalk = Chalk(context)
+
+val strokes = mutableListOf&lt;Stroke&gt;()
+// on every finger-up:
+strokes += Stroke(xs.toFloatArray(), ys.toFloatArray())
+chalk.guess(strokes)
+// [Guess(label=house, score=0.89), Guess(label=barn, score=0.06), ...]
+
+chalk.guess(strokes, count = 5)
+chalk.close()</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-label">Java</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-java">try (Chalk chalk = new Chalk(context)) {
+    List&lt;Guess&gt; guesses = chalk.guess(strokes);
+    String best = guesses.get(0).getLabel();
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="use-cases">
+  <div class="section-head">
+    <div class="kicker">Use cases</div>
+    <h2>Where Chalk fits</h2>
+    <p>Anywhere people draw with a finger or a stylus.</p>
+  </div>
+  <div class="usecase-list">
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8.5 15a4 4 0 0 0 7 0"/></svg></div>
+      <div><h4>Drawing games</h4><p>Pictionary-style party games and "draw this in 20 seconds" challenges, fully offline.</p><code class="example">guess after every stroke → "Is it a house?"</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5l8 4 8-4v14l-8-4Z"/></svg></div>
+      <div><h4>Kids' learning apps</h4><p>"Draw a fish": check the drawing on the device, with no child's data leaving the phone.</p><code class="example">fish 97%</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+      <div><h4>Sketch search</h4><p>Draw an icon to find an emoji, a sticker, an app or a product category.</p><code class="example">draw a sun → ☀️</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4Z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+      <div><h4>Notes &amp; whiteboards</h4><p>Tag doodles in handwritten notes so they are searchable, or turn a rough sketch into a clean clip-art icon.</p><code class="example">doodle → tag "bicycle"</code></div>
+    </div>
+  </div>
+</section>
+
+<section id="quality">
+  <div class="section-head">
+    <div class="kicker">Quality</div>
+    <h2>Honest numbers</h2>
+    <p>Quick, Draw! drawings never used for training (50 per category, 17,250 in total), through the same touch-input pipeline the library uses. Top-1 = the first guess is right; top-3 = the answer is among the first three.</p>
+  </div>
+  <table>
+    <thead><tr><th></th><th>Chalk</th><th>BEiT-base sketch classifier</th><th>MobileViT-small (QuickDraw)</th></tr></thead>
+    <tbody>
+      <tr><td>Finished drawings: top-1 / top-3</td><td>81.5% / 94.3%</td><td><b>83.3% / 95.6%</b></td><td>70.6% / 87.9%</td></tr>
+      <tr><td>Half-drawn: top-1 / top-3</td><td><b>53.3% / 73.9%</b></td><td>50.1% / 69.7%</td><td>40.4% / 59.7%</td></tr>
+      <tr><td>Size</td><td><b>1.8 MB</b></td><td>348 MB</td><td>21 MB</td></tr>
+      <tr><td>Latency, one drawing, 1 CPU thread (laptop)</td><td><b>~1 ms</b></td><td>~69 ms</td><td>~2.5 ms</td></tr>
+    </tbody>
+  </table>
+  <p class="table-note">A 200× larger image model is 1.8 points more accurate on finished drawings; Chalk is better at guessing while the user is still drawing, and about the same for drawings from every country (India 80.4%, US 81.1%, UK 80.3%). Hardest categories: marker, bear, garden hose, aircraft carrier (34–40%); easiest: helicopter, angel, star, ladder, The Mona Lisa (97–98%).</p>
+</section>
+
+<section id="api">
+  <div class="section-head">
+    <div class="kicker">Reference</div>
+    <h2>API at a glance</h2>
+  </div>
+  <table>
+    <thead><tr><th>Member</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>Chalk(context)</code></td><td>Loads the bundled model. Implements <code>Closeable</code>.</td></tr>
+      <tr><td><code>guess(strokes, count = 3)</code></td><td>The <code>count</code> most likely labels, best first, as <code>Guess(label, score)</code>. Empty for no points.</td></tr>
+      <tr><td><code>probabilities(strokes)</code></td><td>A probability for every label, in the order of <code>labels</code>; <code>null</code> for no points.</td></tr>
+      <tr><td><code>labels</code></td><td>The 345 labels, as Quick, Draw! names them.</td></tr>
+      <tr><td><code>Stroke(x, y)</code> · <code>Stroke.of(x0, y0, …)</code></td><td>One stroke: the points from finger-down to finger-up, in any coordinates.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="pricing">
+  <div class="section-head">
+    <div class="kicker">Pricing &amp; license</div>
+    <h2>Free until you're big.</h2>
+    <p>No API key, no sign-up, no license file. Add Chalk to your project and ship. It stays free until your product passes 10,000 monthly active devices, and there's never a limit on how often each device runs it.</p>
+  </div>
+  <div class="price-grid">
+    <div class="price-card featured">
+      <span class="price-badge">Start here</span>
+      <div class="plan">Community</div>
+      <div class="price">Free</div>
+      <p class="price-sub">For indie developers, startups and growing apps, up to 10,000 monthly active devices.</p>
+      <ul>
+        <li>Commercial use allowed</li>
+        <li>No API key, account or license file</li>
+        <li>Unlimited calls on every device</li>
+        <li>Runs fully on-device, with no tracking or phoning home</li>
+      </ul>
+      <a class="btn btn-primary" href="#install">Get started</a>
+    </div>
+    <div class="price-card">
+      <div class="plan">Commercial</div>
+      <div class="price">Let's talk</div>
+      <p class="price-sub">For products above 10,000 monthly active devices on any platform.</p>
+      <ul>
+        <li>One license per product, per model</li>
+        <li>Pricing that fits your scale</li>
+        <li>Direct support from the people who built it</li>
+        <li>Early access to model updates</li>
+      </ul>
+      <div class="price-contact"><a class="btn btn-secondary" href="mailto:raju348636@gmail.com?subject=Chalk%20commercial%20license">Email</a><a class="btn btn-secondary" href="https://wa.me/916353321951">WhatsApp</a><a class="btn btn-secondary" href="tel:+916353321951">Call</a></div>
+    </div>
+    <div class="price-card">
+      <div class="plan">Custom models</div>
+      <div class="price">Built for you</div>
+      <p class="price-sub">A small, fast on-device model trained for your language, domain or task.</p>
+      <ul>
+        <li>Sketch and handwriting recognition, moderation, classification and more</li>
+        <li>Tuned on your use case and your users' languages</li>
+        <li>Shipped as a plain Kotlin library, like Chalk</li>
+        <li>Private: your model runs on your users' devices</li>
+      </ul>
+      <div class="price-contact"><a class="btn btn-secondary" href="mailto:raju348636@gmail.com?subject=Custom%20model">Email</a><a class="btn btn-secondary" href="https://wa.me/916353321951">WhatsApp</a><a class="btn btn-secondary" href="tel:+916353321951">Call</a></div>
+    </div>
+  </div>
+  <div class="price-rules">
+    <div>
+      <h3>How devices are counted</h3>
+      <p>A monthly active device is a phone, tablet or other device that runs Chalk at least once in a calendar month.</p>
+      <p>The 10,000 limit applies separately to each product, each platform (Android, iOS, web…) and each Hoverfly model. Crossed it? You have 30 days to get a commercial license.</p>
+    </div>
+    <div>
+      <h3>What the license does not allow</h3>
+      <ul>
+        <li>Selling or redistributing Chalk or its model on its own, or inside another SDK</li>
+        <li>Extracting, modifying or fine-tuning the model weights</li>
+        <li>Using the model or its outputs to train or distill another model</li>
+        <li>Reverse engineering the model or its file format</li>
+        <li>Offering it as a hosted API for others</li>
+      </ul>
+    </div>
+  </div>
+  <p class="price-foot">Questions about licensing? Email <a href="mailto:raju348636@gmail.com">raju348636@gmail.com</a> or call / WhatsApp <a class="nowrap" href="tel:+916353321951">+91 63533 21951</a>. Full terms: <a href="https://github.com/rajumark/chalk/blob/main/LICENSE">Hoverfly Community License</a>.</p>
+</section>
+
+
+
+
+<section id="faq">
+  <div class="section-head">
+    <div class="kicker">FAQ</div>
+    <h2>Questions</h2>
+  </div>
+  <div class="faq-item"><h4>What is Chalk?</h4><p>An Android library that recognises doodles: give it the strokes of a drawing and it guesses which of 345 everyday things it shows.</p></div>
+  <div class="faq-item"><h4>Which things does it know?</h4><p>The 345 categories of Google's Quick, Draw!: animals (cat, dog, lion, fish …), food (pizza, banana, cake …), vehicles, household objects, shapes, body parts and landmarks like The Eiffel Tower. <code>chalk.labels</code> lists them all. Anything else gets the nearest of these.</p></div>
+  <div class="faq-item"><h4>Do I need to send an image?</h4><p>No. Chalk reads strokes, the points a finger or stylus draws. It is much smaller and faster than an image model, and it knows the order the lines were drawn in, which is what lets it guess early.</p></div>
+  <div class="faq-item"><h4>Can it guess before the drawing is finished?</h4><p>Yes. It was trained on half-finished drawings too. Call <code>guess()</code> after every stroke, or every few points while the finger moves.</p></div>
+  <div class="faq-item"><h4>How fast is it on a phone?</h4><p>A few milliseconds on a laptop JVM, and in the same speed class as Hoverfly's other libraries on an Android emulator. Load it once, off the main thread, and call it from a background thread.</p></div>
+  <div class="faq-item"><h4>Is the Kotlin port exact?</h4><p>From screen-like float coordinates, the simplified points, the top-3 guesses and the probabilities (within 0.000002) match the reference implementation on all 150 test drawings, on the JVM and on an Android device.</p></div>
+  <div class="faq-item"><h4>How much does Chalk cost?</h4><p>Nothing for products with up to 10,000 monthly active devices per platform, including commercial apps. There is no API key or account, and no limit on how often it runs. Above that, a commercial license is needed; see <a href="#pricing">Pricing</a>.</p></div>
+  <div class="faq-item"><h4>Can you build a model for my app?</h4><p>Yes. Hoverfly trains custom on-device models for your task and ships them as a small library like this one. Email <a href="mailto:raju348636@gmail.com">raju348636@gmail.com</a> or call / WhatsApp +91 63533 21951.</p></div>
+</section>
+
+<footer>
+  <div class="foot-links">
+    <a href="https://github.com/rajumark/chalk">GitHub</a>
+    <a href="https://github.com/rajumark/chalk/blob/main/LICENSE">License</a>
+    <a href="https://rajumark.github.io/moji/">Moji</a>
+    <a href="https://rajumark.github.io/beacon/">Beacon</a>
+    <a href="https://rajumark.github.io/comeback/">Comeback</a>
+    <a href="https://rajumark.github.io/gatekeeper/">Gatekeeper</a>
+    <a href="https://rajumark.github.io/comma/">Comma</a>
+    <a href="https://rajumark.github.io/hideout/">Hideout</a>
+  </div>
+  <div class="copyright">© 2026 Hoverfly · Chalk · trained on Quick, Draw! by Google (CC BY 4.0)</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<script>
+  if (window.hljs) { document.querySelectorAll('pre code[class*="language-"]').forEach(function (b) { hljs.highlightElement(b); }); }
+</script>
+
+<script>
+  document.querySelectorAll(".copy-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.closest(".code-block").querySelector("pre code");
+      if (!code) return;
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        var original = btn.textContent;
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        window.setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1500);
+      });
+    });
+  });
+</script>
+
+<script>
+  // Real output from the sample app on an emulator, rotating every 5 s: [drawing, guesses].
+  var DEMO = [["a house, 4 strokes", "house 89% · barn 6% · church 1%"], ["a sun: a circle and 8 rays", "sun 93% · spider 1% · light bulb 0%"], ["a fish: body, tail, eye", "fish 97% · whale 1% · shark 1%"], ["half a house: walls and roof only", "house 86% · barn 6% · church 1%"]];
+  (function () {
+    var demo = document.getElementById("heroDemo");
+    var i = 0;
+    function render(ex) {
+      document.getElementById("demoPrompt").textContent = "chalk.guess(strokes)";
+      document.getElementById("demoInput").textContent = ex[0];
+      var chips = document.getElementById("demoChips");
+      chips.innerHTML = "";
+      var a = document.createElement("span");
+      a.className = "restored";
+      a.textContent = ex[1];
+      chips.appendChild(a);
+    }
+    render(DEMO[0]);
+    window.setInterval(function () {
+      demo.classList.add("is-fading");
+      window.setTimeout(function () { i = (i + 1) % DEMO.length; render(DEMO[i]); demo.classList.remove("is-fading"); }, 350);
+    }, 5000);
+  })();
+</script>
+</body>
+</html>
