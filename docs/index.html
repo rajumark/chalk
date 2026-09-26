@@ -149,6 +149,21 @@
     transition: opacity 0.35s ease;
   }
   .hero-demo.is-fading { opacity: 0; }
+  .sketch-demo { max-width: 720px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+  @media (max-width: 640px) { .sketch-demo { grid-template-columns: minmax(0, 1fr); padding: 20px; } }
+  .sd-canvas { position: relative; background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; aspect-ratio: 1; }
+  .sd-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sd-canvas path { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .sd-step { position: absolute; left: 14px; bottom: 10px; font-size: 12px; color: var(--text-secondary); }
+  .sd-pen { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .sd-side .sd-label { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
+  .sd-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 40px; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .sd-row .n { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
+  .sd-row:first-child .n { font-size: 21px; font-weight: 650; }
+  .sd-row .bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .sd-row .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width .5s ease; }
+  .sd-row .v { font-size: 12.5px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+  .sd-code { margin-top: 18px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-secondary); }
   .hero-demo .prompt { color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; }
   .hero-demo .input-row {
     background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
@@ -363,10 +378,21 @@
     <a class="btn btn-secondary" href="https://github.com/rajumark/chalk">View source</a>
   </div>
   <p class="hero-trust">Free up to 10k monthly active devices · No API key · Live on JitPack</p>
-  <div class="hero-demo" id="heroDemo">
-    <div class="prompt" id="demoPrompt"></div>
-    <div class="bubble" id="demoInput"></div>
-    <div class="chip-row" id="demoChips"></div>
+  <div class="hero-demo sketch-demo" id="heroDemo" aria-label="Chalk guessing a drawing stroke by stroke">
+    <div class="sd-canvas">
+      <svg viewBox="0 0 100 100" id="sdSvg" aria-hidden="true"></svg>
+      <div class="sd-pen" id="sdPen"></div>
+      <div class="sd-step" id="sdStep"></div>
+    </div>
+    <div class="sd-side">
+      <div class="sd-label">Chalk thinks it's</div>
+      <div id="sdRows">
+        <div class="sd-row"><span class="n">…</span><span class="bar"><i></i></span><span class="v"></span></div>
+        <div class="sd-row"><span class="n"></span><span class="bar"><i></i></span><span class="v"></span></div>
+        <div class="sd-row"><span class="n"></span><span class="bar"><i></i></span><span class="v"></span></div>
+      </div>
+      <div class="sd-code">chalk.guess(strokes) · after every stroke</div>
+    </div>
   </div>
 </header>
 
@@ -681,26 +707,67 @@ chalk.close()</code></pre>
 </script>
 
 <script>
-  // Real output from the sample app on an emulator, rotating every 5 s: [drawing, guesses].
-  var DEMO = [["a house, 4 strokes", "house 89% · barn 6% · church 1%"], ["a sun: a circle and 8 rays", "sun 93% · spider 1% · light bulb 0%"], ["a fish: body, tail, eye", "fish 97% · whale 1% · shark 1%"], ["half a house: walls and roof only", "house 86% · barn 6% · church 1%"]];
+  // Real output of the Chalk model for these strokes, recomputed after every stroke (the same guesses the app shows).
+  var DEMO = [{"name": "house", "strokes": [[[15, 45], [15, 95], [85, 95], [85, 45], [15, 45]], [[10, 48], [50, 8], [90, 48]], [[42, 95], [42, 70], [58, 70], [58, 95]], [[22, 55], [34, 55], [34, 65], [22, 65], [22, 55]]], "guesses": [[["square", 0.143], ["suitcase", 0.08], ["postcard", 0.038]], [["house", 0.859], ["barn", 0.057], ["church", 0.012]], [["house", 0.715], ["barn", 0.194], ["church", 0.02]], [["house", 0.889], ["barn", 0.057], ["church", 0.012]]]}, {"name": "sun", "strokes": [[[70.0, 50.0], [69.5, 54.5], [68.0, 58.7], [65.6, 62.5], [62.5, 65.6], [58.7, 68.0], [54.5, 69.5], [50.0, 70.0], [45.5, 69.5], [41.3, 68.0], [37.5, 65.6], [34.4, 62.5], [32.0, 58.7], [30.5, 54.5], [30.0, 50.0], [30.5, 45.5], [32.0, 41.3], [34.4, 37.5], [37.5, 34.4], [41.3, 32.0], [45.5, 30.5], [50.0, 30.0], [54.5, 30.5], [58.7, 32.0], [62.5, 34.4], [65.6, 37.5], [68.0, 41.3], [69.5, 45.5], [70.0, 50.0]], [[76.0, 50.0], [92.0, 50.0]], [[68.4, 68.4], [79.7, 79.7]], [[50.0, 76.0], [50.0, 92.0]], [[31.6, 68.4], [20.3, 79.7]], [[24.0, 50.0], [8.0, 50.0]], [[31.6, 31.6], [20.3, 20.3]], [[50.0, 24.0], [50.0, 8.0]], [[68.4, 31.6], [79.7, 20.3]]], "guesses": [[["circle", 0.411], ["moon", 0.041], ["face", 0.034]], [["frying pan", 0.744], ["eyeglasses", 0.049], ["sun", 0.024]], [["sun", 0.608], ["frying pan", 0.077], ["spider", 0.072]], [["sun", 0.91], ["spider", 0.009], ["frying pan", 0.004]], [["sun", 0.912], ["spider", 0.014], ["crab", 0.007]], [["sun", 0.899], ["spider", 0.017], ["crab", 0.005]], [["sun", 0.915], ["spider", 0.016], ["light bulb", 0.004]], [["sun", 0.946], ["spider", 0.006], ["light bulb", 0.003]], [["sun", 0.935], ["spider", 0.006], ["light bulb", 0.003]]]}, {"name": "fish", "strokes": [[[20, 50], [35, 35], [60, 32], [78, 45], [80, 50], [78, 55], [60, 68], [35, 65], [20, 50]], [[78, 50], [95, 35], [95, 65], [78, 50]], [[33, 46], [34, 47]]], "guesses": [[["hexagon", 0.039], ["nail", 0.037], ["eye", 0.028]], [["fish", 0.953], ["shark", 0.012], ["whale", 0.005]], [["fish", 0.973], ["whale", 0.008], ["shark", 0.006]]]}];
   (function () {
-    var demo = document.getElementById("heroDemo");
-    var i = 0;
-    function render(ex) {
-      document.getElementById("demoPrompt").textContent = "chalk.guess(strokes)";
-      document.getElementById("demoInput").textContent = ex[0];
-      var chips = document.getElementById("demoChips");
-      chips.innerHTML = "";
-      var a = document.createElement("span");
-      a.className = "restored";
-      a.textContent = ex[1];
-      chips.appendChild(a);
+    var svg = document.getElementById("sdSvg"), pen = document.getElementById("sdPen"),
+        step = document.getElementById("sdStep"), box = document.getElementById("heroDemo"),
+        rows = document.querySelectorAll("#sdRows .sd-row");
+    var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var NS = "http://www.w3.org/2000/svg";
+    function show(g) {
+      for (var i = 0; i < 3; i++) {
+        var r = rows[i], x = g[i];
+        r.querySelector(".n").textContent = x ? x[0] : "";
+        r.querySelector(".bar i").style.width = x ? Math.max(2, Math.round(x[1] * 100)) + "%" : "0";
+        r.querySelector(".v").textContent = x ? Math.round(x[1] * 100) + "%" : "";
+      }
     }
-    render(DEMO[0]);
-    window.setInterval(function () {
-      demo.classList.add("is-fading");
-      window.setTimeout(function () { i = (i + 1) % DEMO.length; render(DEMO[i]); demo.classList.remove("is-fading"); }, 350);
-    }, 5000);
+    function pathFor(pts) {
+      var d = "M" + pts[0][0] + " " + pts[0][1];
+      for (var i = 1; i < pts.length; i++) d += " L" + pts[i][0] + " " + pts[i][1];
+      var p = document.createElementNS(NS, "path");
+      p.setAttribute("d", d);
+      return p;
+    }
+    function drawStroke(pts, done) {
+      var p = pathFor(pts);
+      svg.appendChild(p);
+      if (still) { done(); return; }
+      var len = p.getTotalLength(), ms = Math.max(350, len * 14), t0 = null;
+      p.style.strokeDasharray = len + " " + len;
+      p.style.strokeDashoffset = len;
+      pen.style.opacity = 1;
+      function frame(t) {
+        if (t0 === null) t0 = t;
+        var k = Math.min(1, (t - t0) / ms);
+        p.style.strokeDashoffset = len * (1 - k);
+        var pt = p.getPointAtLength(len * k);
+        pen.style.left = pt.x + "%"; pen.style.top = pt.y + "%";
+        if (k < 1) requestAnimationFrame(frame); else { pen.style.opacity = 0; done(); }
+      }
+      requestAnimationFrame(frame);
+    }
+    function play(n) {
+      var ex = DEMO[n % DEMO.length], k = 0;
+      svg.innerHTML = "";
+      show([["…", 0]]);
+      box.classList.remove("is-fading");
+      function next() {
+        if (k >= ex.strokes.length) {
+          setTimeout(function () { box.classList.add("is-fading"); setTimeout(function () { play(n + 1); }, 400); }, still ? 4000 : 2600);
+          return;
+        }
+        step.textContent = "stroke " + (k + 1) + " of " + ex.strokes.length;
+        drawStroke(ex.strokes[k], function () {
+          show(ex.guesses[k]);
+          k++;
+          setTimeout(next, still ? 1200 : 650);
+        });
+      }
+      setTimeout(next, 300);
+    }
+    play(0);
   })();
 </script>
 </body>
