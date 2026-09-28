@@ -346,6 +346,16 @@
   .verdict.bad { color:#d1242f; border-color:#d1242f; }
   .verdict.score { color: var(--text-secondary); }
   .chip-row .restored { font-size: 17px; font-weight: 500; color: var(--accent); }
+
+  /* App ideas */
+  .idea-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+  .idea {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+  }
+  .idea .emo { font-size: 22px; line-height: 1.2; flex: none; }
+  .idea p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
+  .idea p b { color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -361,6 +371,7 @@
       <a href="#install">Install</a>
       <a href="#usage">Usage</a>
       <a href="#quality">Quality</a>
+      <a href="#ideas">Ideas</a>
       <a href="#api">API</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
@@ -546,6 +557,36 @@ chalk.close()</code></pre>
       <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4Z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
       <div><h4>Notes &amp; whiteboards</h4><p>Tag doodles in handwritten notes so they are searchable, or turn a rough sketch into a clean clip-art icon.</p><code class="example">doodle → tag "bicycle"</code></div>
     </div>
+  </div>
+</section>
+
+<section id="ideas">
+  <div class="section-head">
+    <div class="kicker">App ideas</div>
+    <h2>20 apps you could build with Chalk</h2>
+    <p>Real problems Chalk solves today. Pick one and ship it.</p>
+  </div>
+  <div class="idea-list">
+    <div class="idea"><span class="emo" aria-hidden="true">🎮</span><p><b>Offline Pictionary</b> · A party game where the phone guesses your drawing live, no internet needed.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧒</span><p><b>Kids drawing buddy</b> · Cheer "That's a cat!" while a child draws, and suggest what to draw next.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🔍</span><p><b>Sketch search</b> · Draw a shoe or a chair to search a shop catalogue instead of typing.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">😀</span><p><b>Draw-to-emoji</b> · Sketch a heart, sun or pizza in chat and insert the matching emoji or sticker.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📚</span><p><b>Vocabulary flashcards</b> · Show "manzana" and ask the learner to draw it to prove they know the word.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🍼</span><p><b>Toddler first words</b> · A toddler draws a dog, the app says "dog" out loud and shows a picture.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏫</span><p><b>Classroom quiz</b> · The teacher says "draw a triangle" and every tablet checks the answer offline.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">⏱️</span><p><b>Speed drawing challenge</b> · "Draw 5 things in 60 seconds" daily streak game with an on-device judge.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📖</span><p><b>Interactive storybook</b> · The child draws a dragon, and the story continues with that dragon in it.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">✨</span><p><b>Doodle cleanup</b> · Swap rough whiteboard doodles for clean icons in a notes or slides app.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🗂️</span><p><b>Sketchbook search</b> · Auto-tag old doodles so users can search their notebook for "bicycle".</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">⚡</span><p><b>Gesture shortcuts</b> · Draw an envelope to open mail or a camera to open the camera.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">⌚</span><p><b>Smartwatch doodle input</b> · Draw a tiny heart or coffee cup on a watch to send it as a reply.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">♿</span><p><b>Picture talk (AAC)</b> · People who can't speak or type draw what they need, like water or a bed.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧑‍🎨</span><p><b>Drawing lessons</b> · Check each practice sketch and show when it becomes recognisable.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🎁</span><p><b>Greeting card maker</b> · Sketch rough shapes and get matching clip-art placed on the card.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧠</span><p><b>Brain-training game</b> · Timed recall rounds: "draw the 3 objects you just saw".</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🛒</span><p><b>Doodle shopping list</b> · Draw a banana and a carrot; get a readable list for kids or low-literacy users.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🙋</span><p><b>Human check</b> · Ask users to draw a simple object as a friendlier offline alternative to text CAPTCHAs.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🎲</span><p><b>Multiplayer guessing</b> · Pass-the-phone game where players race the AI to guess each drawing.</p></div>
   </div>
 </section>
 
