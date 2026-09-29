@@ -1,0 +1,20 @@
+:root { --bg: #fbf8ff; --card: #efedf4; --text: #1b1b21; --muted: #5d5e67; --line: #c6c6d0; --accent: #6750a4; --track: #e2e0ea; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 520px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 34px; font-weight: 400; margin: 0; }
+.muted { color: var(--muted); margin: 4px 0 16px; }
+.small { font-size: 13px; margin: 8px 0 0; }
+.padwrap { position: relative; }
+canvas { width: 100%; aspect-ratio: 1; display: block; background: #fff; border: 1px solid var(--line); border-radius: 20px; touch-action: none; cursor: crosshair; }
+#hint { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; text-align: center; padding-top: 48%; }
+.card { background: var(--card); border-radius: 20px; padding: 16px 20px; margin-top: 16px; }
+.label { color: var(--accent); font-weight: 500; font-size: 14px; margin-bottom: 6px; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.bar .top { flex: 1; font-size: 22px; font-weight: 600; }
+.bar .lbl { flex: 1; font-size: 16px; }
+.track { width: 96px; height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; }
+.fill { height: 8px; background: var(--accent); }
+.pct { width: 40px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 0 4px; }
+.chip { font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: transparent; cursor: pointer; }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0
+
+- Kotlin Multiplatform: Android, JVM desktop, iOS (arm64 device + simulator), macOS arm64,
+  JavaScript and WebAssembly, published to Maven Central as `io.github.rajumark:chalk`.
+- New constructor `Chalk()`: the model ships inside the library on every platform, so no
+  `Context` is needed. `Chalk(context)` still compiles on Android (deprecated).
+- Same model and same results as 1.x; parity with the reference (150 drawings) is tested on every target.
+- The sample is now a Compose Multiplatform app (Android, desktop, iOS) plus a web page (JS and Wasm).
+
 ## 1.0.0
 
 - First version: `Chalk(context).guess(strokes)` returns the most likely of 345 everyday things (the QuickDraw

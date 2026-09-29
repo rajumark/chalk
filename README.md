@@ -1,13 +1,13 @@
 # Chalk 🖍️
 
-By Hoverfly. On-device doodle recogniser for Android. It reads the pen strokes of a drawing and guesses what it is,
+By Hoverfly. On-device doodle recogniser for **Kotlin Multiplatform**: Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly. It reads the pen strokes of a drawing and guesses what it is,
 out of 345 everyday things (cat, house, bicycle, pizza, the Eiffel Tower …), even before the drawing is finished.
 
 ```kotlin
 import io.github.rajumark.hoverfly.chalk.Chalk
 import io.github.rajumark.hoverfly.chalk.Stroke
 
-Chalk(context).use { chalk ->
+Chalk().use { chalk ->
     chalk.guess(strokes)     // strokes from your drawing view, in screen pixels
     // a house drawn with 4 strokes:
     // [Guess(label=house, score=0.89), Guess(label=barn, score=0.06), Guess(label=church, score=0.01)]
@@ -19,27 +19,32 @@ Chalk(context).use { chalk ->
 - **345 things**, the Google QuickDraw categories: animals, food, vehicles, objects, shapes, landmarks.
 - **Tiny.** 1.7 MB of int8 weights, 81% top-1 and 94% top-3 on 345 categories.
 - **No dependencies.** Inference is plain Kotlin. There is no ONNX Runtime, TFLite, ML Kit or native code.
-- **Private and offline.** The model ships inside the AAR. There is no network, no permission and no telemetry.
-- **minSdk 21.** Works from Kotlin and Java.
+- **Private and offline.** The model ships inside the library on every platform. There is no network, no permission and no telemetry.
+- **Every platform, same results.** Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly, tested against the reference model on each.
 
 ## Install
 
-Available via [JitPack](https://jitpack.io/#rajumark/chalk):
-
 ```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-
-// build.gradle.kts
+// build.gradle.kts: commonMain, or any platform source set
 dependencies {
-    implementation("com.github.rajumark:chalk:v1.0.0")
+    implementation("io.github.rajumark:chalk:2.0.0")
 }
 ```
+
+It's on Maven Central, so no extra repository is needed. Gradle picks the right artifact for each platform:
+
+| Platform | Artifact |
+|---|---|
+| Android (minSdk 21) | `chalk-android` |
+| JVM desktop (Java 8+) | `chalk-jvm` |
+| iOS device and simulator (arm64) | `chalk-iosarm64`, `chalk-iossimulatorarm64` |
+| macOS (arm64) | `chalk-macosarm64` |
+| JavaScript (browser, Node) | `chalk-js` |
+| WebAssembly (browser, Node) | `chalk-wasm-js` |
+
+The Android-only 1.x releases are on JitPack: `com.github.rajumark:chalk:v1.x`.
+
+Upgrading from 1.x on Android: `Chalk(context)` still compiles in Kotlin (deprecated). The model no longer needs a `Context`, so switch to `Chalk()`. Java code must change `new Chalk(context)` to `new Chalk()`.
 
 ## Screenshots
 
@@ -50,10 +55,16 @@ The sample app on an emulator. Every guess is computed on the device.
 | ![House](docs/screenshots/chalk-house.png) | ![Sun](docs/screenshots/chalk-sun.png) | ![Fish](docs/screenshots/chalk-fish.png) | ![Half-drawn house](docs/screenshots/chalk-partial.png) |
 | house 89% | sun 93% | fish 97% | walls + roof: house 86% |
 
+The KMP sample on each platform:
+
+| Android | iOS | Desktop | Web (Wasm) |
+|---|---|---|---|
+| ![Android](screenshots/android/1-house.png) | ![iOS](screenshots/ios/1-house.png) | ![Desktop](screenshots/desktop/1-house.png) | ![Web](screenshots/web-wasm/1-house.png) |
+
 ## Use
 
 ```kotlin
-val chalk = Chalk(context)            // loads the model: do it off the main thread, keep one instance
+val chalk = Chalk()            // loads the model: do it off the main thread, keep one instance
 
 // one Stroke per finger-down ... finger-up, points in any coordinates
 val square = Stroke.of(100f, 100f, 900f, 100f, 900f, 900f, 100f, 900f, 100f, 100f)
@@ -79,7 +90,7 @@ val best = chalk.guess(strokes).firstOrNull()
 From Java:
 
 ```java
-try (Chalk chalk = new Chalk(context)) {
+try (Chalk chalk = new Chalk()) {
     List<Guess> guesses = chalk.guess(strokes);
 }
 ```
@@ -88,7 +99,7 @@ try (Chalk chalk = new Chalk(context)) {
 
 | | |
 |---|---|
-| `Chalk(context)` | Loads the bundled model. `Closeable`. |
+| `Chalk()` | Loads the bundled model. `AutoCloseable`. |
 | `guess(strokes, count = 3)` | The `count` most likely labels, best first, as `Guess(label, score)`. Empty for no points. |
 | `probabilities(strokes)` | A probability for every label (order of `labels`), or `null` for no points. |
 | `labels` | The 345 labels, as QuickDraw names them (`"cat"`, `"hot air balloon"`, `"The Eiffel Tower"`). |
@@ -111,45 +122,56 @@ with the rendering it scores best on). On all 172,500 test drawings Chalk scores
 about the same for drawings from every country (India 80.4%, US 81.1%, UK 80.3%).
 
 A 200× larger image model is 1.8 points more accurate on finished drawings; Chalk is better at guessing while the
-user is still drawing, at a size that fits in any app. In the pure-Kotlin library a guess takes about 15 ms on a laptop
-JVM (the Python numbers above use SIMD); on an Android emulator it ran at about 50–100 ms, the same speed class as
-Hoverfly's other libraries on that emulator.
+user is still drawing, at a size that fits in any app. In the pure-Kotlin library a guess takes about 13 ms on a laptop
+JVM (the Python numbers above use SIMD), 25 ms on an Android emulator and 50–90 ms in a browser (JS or Wasm).
 
 **Where it falls short:** some categories look alike when drawn quickly: the hardest are marker, bear, garden hose,
 aircraft carrier, cooler and cup (34–45% top-1), while helicopter, angel, wine glass, star, ladder and The Mona Lisa
 are 97–98%. Very neat computer-made shapes are harder than hand-drawn ones (a perfect triangle is a close call between
 "triangle" and "see saw"). It only knows the 345 QuickDraw categories, so anything else gets the nearest one.
 
-## Sample app
+## Sample apps
 
-`sample/` is a Jetpack Compose (Material 3) demo: draw with your finger and watch the top 3 guesses update as you
-draw, with Undo and Clear.
+`sample/` is a separate Gradle build that uses the **published** library, never the source. It resolves `io.github.rajumark` only from Maven Local, or from Maven Central with `-PchalkRepo=central`. It has a Compose Multiplatform app for Android, desktop and iOS, and a web page built for both Kotlin/JS and Kotlin/Wasm.
 
 ```bash
-./gradlew :sample:installDebug
+./gradlew :chalk:publishToMavenLocal
+cd sample
+./gradlew :androidApp:installRelease
+./gradlew :desktopApp:run
+./gradlew :webApp:wasmJsBrowserDevelopmentRun     # or :webApp:jsBrowserDevelopmentRun
+open iosApp/iosApp.xcodeproj                       # run the iosApp scheme on a simulator
 ```
 
 ## Project layout
 
 ```
-chalk/                the library (AAR)
-  src/main/assets/chalk/          chalk.bin (int8 weights) · labels.txt
-  src/main/kotlin/io/github/rajumark/hoverfly/chalk/           public API: Chalk, Stroke, Guess
-  src/main/kotlin/io/github/rajumark/hoverfly/chalk/internal/  Strokes (simplification), Network (the model in plain Kotlin)
-  src/test/           JVM tests: parity with the reference on 150 drawings, API, latency
-  src/androidTest/    the same parity check on a real device
-sample/               demo app
+chalk/                         the library
+  src/commonMain/              public API (Chalk, Stroke, Guess) and the model in plain Kotlin
+                               (internal/: Strokes (simplification), Network, Hypot)
+  src/{jvm,android,embedded}Main/   the only platform code: model loading
+  src/modelData/               chalk.bin (int8 weights) · labels.txt
+  src/commonTest/              parity with the reference on 150 drawings, API, latency; runs on every target
+  src/jvmTest/                 checks the common hypot against StrictMath.hypot, bit for bit
+sample/                        demo apps using the published artifacts
+docs/                          website (rajumark.github.io/chalk)
 ```
+
+On JVM and Android the model ships as Java resources in the jar/AAR. Kotlin/Native and the web have no resources, so the build compiles it into the library (`generateEmbeddedModel`).
 
 ## Tests
 
 ```bash
-./gradlew :chalk:testDebugUnitTest                      # JVM: parity + API
-./gradlew :chalk:connectedDebugAndroidTest              # on a connected device/emulator
+./gradlew :chalk:jvmTest
+./gradlew :chalk:testAndroidHostTest
+./gradlew :chalk:connectedAndroidDeviceTest              # on a connected device/emulator
+./gradlew :chalk:iosSimulatorArm64Test
+./gradlew :chalk:macosArm64Test
+./gradlew :chalk:jsNodeTest :chalk:jsBrowserTest
+./gradlew :chalk:wasmJsNodeTest :chalk:wasmJsBrowserTest
 ```
 
-The parity tests start from screen-like float coordinates and require the same simplified points, the same top-3
-guesses and probabilities within 0.002 of the reference implementation on all 150 test drawings.
+The parity tests start from screen-like float coordinates and require the same simplified points, the same top-3 guesses and probabilities within 0.002 of the reference implementation on all 150 test drawings, on every target. Simplification uses one fdlibm `hypot` in common code, because the platforms' own `hypot` functions round differently in rare cases and that can change which points are kept.
 
 ## How it works
 
