@@ -18,3 +18,9 @@ canvas { width: 100%; aspect-ratio: 1; display: block; background: #fff; border:
 .pct { width: 40px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 0 4px; }
 .chip { font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: transparent; cursor: pointer; }
+/* Side by side on wide screens (desktop browsers), stacked on phones. */
+@media (min-width: 700px) {
+    main { max-width: 820px; }
+    .layout { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    .layout .card { margin-top: 0; }
+}
