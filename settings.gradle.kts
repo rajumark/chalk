@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "chalk-kmp"
 include(":chalk")
+include(":demo")
