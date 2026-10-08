@@ -190,7 +190,7 @@ See [PUBLISHING.md](PUBLISHING.md).
 
 ## More Hoverfly models
 
-Chalk is one of eight small on-device models by [Hoverfly](https://rajumark.github.io/hoverfly/), all with the same install, the same free tier and nothing sent to a server.
+Chalk is one of nine small on-device models by [Hoverfly](https://rajumark.github.io/hoverfly/), all with the same install, the same free tier and nothing sent to a server.
 
 | Model | What it does | Source |
 |---|---|---|
@@ -201,6 +201,7 @@ Chalk is one of eight small on-device models by [Hoverfly](https://rajumark.gith
 | 😊 [Emotion](https://rajumark.github.io/emotion/) | 28 emotions and an overall mood per message | [GitHub](https://github.com/rajumark/emotion) |
 | 🛡️ [Gatekeeper](https://rajumark.github.io/gatekeeper/) | Toxic message detection for Indian chat | [GitHub](https://github.com/rajumark/gatekeeper) |
 | 🏚️ [Hideout](https://rajumark.github.io/hideout/) | Finds and hides phone numbers, UPI, Aadhaar and more | [GitHub](https://github.com/rajumark/hideout) |
+| 📸 [Retake](https://rajumark.github.io/retake/) | Photo quality check: blur, dark, bright, glare, noise, finger | [GitHub](https://github.com/rajumark/retake) |
 
 See them all on the [Hoverfly website](https://rajumark.github.io/hoverfly/#models).
 
